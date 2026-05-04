@@ -12,3 +12,20 @@
 # [ ] Final image under 200MB
 #
 # Start command: uvicorn src.app:app --host 0.0.0.0 --port 8080
+FROM python:3.14-slim AS builder
+WORKDIR /build
+RUN python -m venv /venv
+COPY requirements.txt .
+RUN /venv/bin/pip install --no-cache-dir -r requirements.txt
+
+# Stage 2: final image — copy only the venv and source code
+FROM python:3.14-slim
+WORKDIR /app
+COPY --from=builder /venv /venv
+COPY src/ src/
+RUN adduser --disabled-password --gecos "" appuser
+USER appuser
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD /venv/bin/python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"
+CMD ["/venv/bin/uvicorn", "src.app:app", "--host", "0.0.0.0", "--port", "8080"]

@@ -6,3 +6,20 @@
 # - api exposes port 8080 on the host
 # - Use environment variables from .env for DB credentials
 # - Do NOT hardcode passwords in this file
+services:
+  db:
+    image: postgres:17-alpine
+    env_file: .env.example
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file: .env.example
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
